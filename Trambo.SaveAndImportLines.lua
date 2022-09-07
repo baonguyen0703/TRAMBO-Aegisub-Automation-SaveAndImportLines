@@ -1,28 +1,43 @@
-script_name="@TRAMBO: Save and Import Lines"
+script_name="@TRAMBO: Save and Import Lines 1.1"
 script_description="Save and import lines"
 script_author="TRAMBO"
-script_version="1.0"
+script_version="1.1"
 
-include("Trambo.Library.lua")
+include("Trambo.Library.lua") --ver1.5
 
 save = "Save"
+update = "Update"
 cancel = "Cancel"
 ok = "OK"
 import = "Import"
 manage = "Manage"
 remove = "Remove"
 rename = "Rename"
-default_path = aegisub.decode_path("?user") .. "\\Trambo\\SaveLines Preset.txt"
-path_file = aegisub.decode_path("?user") .. "\\Trambo\\SaveLines_preset_path.txt"
+
+path_file = trambo .. "\\SaveLines_preset_path.txt"
+default_preset_file = trambo .. "\\SaveLines Preset.txt"
+
+check_required_files({path_file,default_preset_file})
+
 namePat = "preset=(.-);"
 
-presetPath = get_presetPath(path_file,default_path)
+presetPath = get_presetPath(path_file,default_preset_file)
 
-presetList = getPreset(presetPath,default_path,namePat)
+presetList = getPreset(presetPath,default_preset_file,namePat)
 table.sort(presetList)
-curpreset = presetList[1]
+curPreset = presetList[1]
 
-function main(sub, sel, act)
+sub=nil
+sel=nil
+act=nil
+meta=nil
+styles=nil
+
+function main(sub_table, sel_table, active_line)
+  sub = sub_table
+  sel = sel_table
+  act = active_line
+  meta, styles = karaskel.collect_head(sub,false)
   ADD = aegisub.dialog.display
   sel = open_dialog(sub,sel,act)
   aegisub.set_undo_point(script_name)
@@ -30,15 +45,9 @@ function main(sub, sel, act)
 end
 
 function open_dialog(sub,sel,act)
-  presetList = getPreset(presetPath,default_path,namePat)
+  presetList = getPreset(presetPath,default_preset_file,namePat)
   table.sort(presetList)
-  local meta, styles = karaskel.collect_head(sub,false)
-  GUI = 
-  { 
-    { class = "label", x = 0, y = 0, width = 4, height = 1, label = "File Name: " .. presetPath:gsub("^.*\\","")},
-    { class = "label", x = 0, y = 1, width = 1, height = 1, label = "Items"},
-    { class = "dropdown", x = 1, y = 1, width = 4, height = 1, items = presetList, value = curpreset, name = "preset"}
-  }
+  GUI = updateGUI()
 
   GUI_save = 
   {
@@ -46,12 +55,12 @@ function open_dialog(sub,sel,act)
     { class = "edit", x = 1, y = 0, width = 2, height = 1, name = "presetName"}
   }
 
-  buttons = {save,import,manage,cancel}
+  buttons = {save,update,import,manage,cancel}
   buttons_save = {ok,cancel}
   buttons_manage = {remove,rename,"Choose File","Close"}
   choice,res = ADD(GUI,buttons)
 
-  while choice == save or choice == manage do
+  while choice == save or choice == update or choice == manage do
     if choice == save then
       local status = false
       local pass = true
@@ -65,40 +74,43 @@ function open_dialog(sub,sel,act)
           end
         end
         if pass == true then
-          savePreset(sub,sel,meta,styles,res_save.presetName,res)
-          presetList = getPreset(presetPath,default_path,namePat)
-          curpreset = res_save.presetName
+          savePreset(res_save.presetName)
+          presetList = getPreset(presetPath,default_preset_file,namePat)
+          curPreset = res_save.presetName
           table.sort(presetList)
           status = true
         end
       end
+    elseif choice == update then
+      curPreset = res.preset
+      updatePreset(curPreset)
     elseif choice == manage then
       end_manage = false;
       while (not end_manage) do 
         GUI_manage = 
         {
           { class = "label", x = 0, y = 0, width = 1, height = 1, label = "Items"},
-          { class = "dropdown", x = 1, y = 0, width = 2, height = 1, items = presetList, value = curpreset, name = "chosenPreset"},
+          { class = "dropdown", x = 1, y = 0, width = 2, height = 1, items = presetList, value = curPreset, name = "chosenPreset"},
           { class = "label", x = 0, y = 1, width = 1, height = 1, label = "Rename"},
           { class = "edit", x = 1, y = 1, width = 2, height = 1, name = "newName"}
         }
         choice_manage, res_manage = ADD(GUI_manage,buttons_manage)
         if choice_manage == remove then
           removePreset(res_manage.chosenPreset,presetPath,namePat)
-          presetList = getPreset(presetPath,default_path,namePat)
-          curpreset = presetList[1]
+          presetList = getPreset(presetPath,default_preset_file,namePat)
+          curPreset = presetList[1]
           table.sort(presetList)
         elseif choice_manage == rename then
           renamePreset(res_manage.chosenPreset,res_manage.newName,presetPath,namePat)
-          presetList = getPreset(presetPath,default_path,namePat)
-          curpreset = presetList[1]
+          presetList = getPreset(presetPath,default_preset_file,namePat)
+          curPreset = presetList[1]
           table.sort(presetList)
         elseif choice_manage == "Choose File" then
           local p = aegisub.dialog.open("Choose your file","","","Text files (.txt)|*.txt", false, true)
           if p then
             presetPath = p
-            presetList = getPreset(presetPath,default_path,namePat)
-            curpreset = presetList[1]
+            presetList = getPreset(presetPath,default_preset_file,namePat)
+            curPreset = presetList[1]
             table.sort(presetList)
             local f = io.open(path_file,"w")
             f:write(p)
@@ -110,18 +122,18 @@ function open_dialog(sub,sel,act)
 
       end
     end
-    GUI = updateGUI(presetList,curpreset)
+    GUI = updateGUI()
     choice, res = ADD(GUI,buttons)
   end
   if choice == import then
-    curpreset = res.preset
-    sel = loadPreset(curpreset,sub,sel,act)
+    curPreset = res.preset
+    sel = loadPreset(curPreset,sub,sel,act)
   end
 
   return sel
 end
 
-function savePreset(sub,sel,meta,styles,name,res)
+function savePreset(name)
 
   local var_str = {"comment=", "start_time=", "end_time=","style=","actor=","margin_l=", "margin_r=","margin_t=","effect=","text="}
   local f = io.open(presetPath,"a")
@@ -168,12 +180,25 @@ function loadPreset(p,sub,sel,act)
   return sel
 end
 
-function updateGUI(presetList,curpreset)
+function updatePreset(p)
+  msg = [[Are you sure you want to update Preset "]] .. p .. [[" ?]]
+  local updatePreset_GUI = {
+        { class = "label", x=0, y=0, width=2, height=1, label=msg}
+      }
+      local updatePreset_buttons = {"YES","NO"}
+      updatePreset_choice,updatePreset_res = ADD(updatePreset_GUI,updatePreset_buttons)
+      if updatePreset_choice == "YES" then
+        removePreset(p,presetPath,namePat)
+        savePreset(p)
+      end
+end
+
+function updateGUI()
   local g = 
   {
     { class = "label", x = 0, y = 0, width = 4, height = 1, label = "File Name: " .. presetPath:gsub("^.*\\","")},
     { class = "label", x = 0, y = 1, width = 1, height = 1, label = "Items"},
-    { class = "dropdown", x = 1, y = 1, width = 4, height = 1, items = presetList, value = curpreset, name = "preset"}
+    { class = "dropdown", x = 1, y = 1, width = 4, height = 1, items = presetList, value = curPreset, name = "preset"},
   } 
   return g
 end
