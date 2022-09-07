@@ -1,4 +1,4 @@
-script_name="@TRAMBO: Save and Import Lines 1.1"
+script_name="@TRAMBO: Save and Import Lines v1.1"
 script_description="Save and import lines"
 script_author="TRAMBO"
 script_version="1.1"
