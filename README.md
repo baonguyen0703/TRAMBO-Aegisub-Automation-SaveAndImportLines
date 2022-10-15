@@ -1,8 +1,15 @@
 # TRAMBO-Aegisub-Automation-SaveAndImportLines
 Save Aegisub lines for reusing later
 #### Screenshot
-![image](https://user-images.githubusercontent.com/98341055/195948146-f198e2b0-5879-44b2-a3df-35e2afa47825.png)
-
+![image](https://user-images.githubusercontent.com/98341055/195948146-f198e2b0-5879-44b2-a3df-35e2afa47825.png)  
+#### Usage:
+https://youtu.be/oxHufw-GF38  
+#### Features:  
+  - Saving aegisub lines
+  - Updating current presets
+  - Importing lines from saved presets
+  - Manage presets and preset file
+  
 #### Installation:  
   1. Put "Trambo.Library.lua" into "include" folder, the default path is:  
     - Aegisub 64-bit: **C:\Program Files\Aegisub\automation\include**  
