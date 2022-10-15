@@ -11,7 +11,7 @@ https://youtu.be/oxHufw-GF38
   - Saving aegisub lines
   - Updating current presets
   - Importing lines from saved presets
-  - Manage presets and preset file
+  - Managing presets and preset file
   
 #### Installation:  
   1. Put "Trambo.Library.lua" into "include" folder, the default path is:  
