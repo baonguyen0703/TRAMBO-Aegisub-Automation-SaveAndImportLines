@@ -1,6 +1,6 @@
 -- Trambo.Library
 -- Author="TRAMBO"
--- Version="1.5" updated on 220709
+-- Version="1.5.1" updated on 230108
 
 include("karaskel.lua") -- karaskel.lua written by Niels Martin Hansen and Rodrigo Braz Monteiro
 
@@ -689,16 +689,40 @@ function getBezierPoint(x1,y1,x2,y2,x3,y3,x4,y4,t)
   return xt,yt
 end
 
+function found_folder(folder_path)
+  local f = io.open(folder_path .. [[\trambo_test.txt]],"w")
+  if f ~= nil then
+    f:close()
+    os.remove(folder_path .. [[\trambo_test.txt]],"w")
+    return true
+  else
+    return false
+  end
+  
+  --using command is slower
+--  local f = io.popen([[if exist ]] .. folder_path .. [[ (echo Yes) else (echo No)]])
+--  output = f:read()
+--  f:close()
+--  if output:match("Yes") then return true else return false end
+end
+
+function check_folder(path)
+  if not found_folder(path) then
+    os.execute("mkdir " .. path)
+  end
+end
+
 function found(file)
-  local res, err, code = os.rename(file, file)
-  return res
+  local f = io.open(file,"r")
+  if f ~= nil then 
+    f:close()
+    return true
+  else
+    return false
+  end
 end
 
 function check_required_files(list_of_files)
-  if not found(trambo) then
-    os.execute("mkdir -p " .. trambo)
-  end
-  
   for i,file in ipairs(list_of_files) do
     if not found(file) then 
       local f = io.open(file, "w")

@@ -1,9 +1,9 @@
-script_name="@TRAMBO: Save and Import Lines v1.1"
+script_name="@TRAMBO: Save and Import Lines"
 script_description="Save and import lines"
 script_author="TRAMBO"
-script_version="1.1"
+script_version="1.1.1" --fixed bug in checking and generating required files
 
-include("Trambo.Library.lua") --ver1.5
+include("Trambo.Library.lua") --ver1.5.1
 
 save = "Save"
 update = "Update"
@@ -17,15 +17,7 @@ rename = "Rename"
 path_file = trambo .. "\\SaveLines_preset_path.txt"
 default_preset_file = trambo .. "\\SaveLines Preset.txt"
 
-check_required_files({path_file,default_preset_file})
-
 namePat = "preset=(.-);"
-
-presetPath = get_presetPath(path_file,default_preset_file)
-
-presetList = getPreset(presetPath,default_preset_file,namePat)
-table.sort(presetList)
-curPreset = presetList[1]
 
 sub=nil
 sel=nil
@@ -39,6 +31,14 @@ function main(sub_table, sel_table, active_line)
   act = active_line
   meta, styles = karaskel.collect_head(sub,false)
   ADD = aegisub.dialog.display
+  
+  check_folder(trambo)
+  check_required_files({path_file,default_preset_file})
+  presetPath = get_presetPath(path_file,default_preset_file)
+  presetList = getPreset(presetPath,default_preset_file,namePat)
+  table.sort(presetList)
+  curPreset = presetList[1]
+  
   sel = open_dialog(sub,sel,act)
   aegisub.set_undo_point(script_name)
   return sel
@@ -183,14 +183,14 @@ end
 function updatePreset(p)
   msg = [[Are you sure you want to update Preset "]] .. p .. [[" ?]]
   local updatePreset_GUI = {
-        { class = "label", x=0, y=0, width=2, height=1, label=msg}
-      }
-      local updatePreset_buttons = {"YES","NO"}
-      updatePreset_choice,updatePreset_res = ADD(updatePreset_GUI,updatePreset_buttons)
-      if updatePreset_choice == "YES" then
-        removePreset(p,presetPath,namePat)
-        savePreset(p)
-      end
+    { class = "label", x=0, y=0, width=2, height=1, label=msg}
+  }
+  local updatePreset_buttons = {"YES","NO"}
+  updatePreset_choice,updatePreset_res = ADD(updatePreset_GUI,updatePreset_buttons)
+  if updatePreset_choice == "YES" then
+    removePreset(p,presetPath,namePat)
+    savePreset(p)
+  end
 end
 
 function updateGUI()
